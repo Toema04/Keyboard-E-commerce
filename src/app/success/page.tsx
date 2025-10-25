@@ -13,9 +13,7 @@ import Stripe from "stripe";
 import { Logo } from "@/components/Logo";
 import { FadeIn } from "@/components/FadeIn";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-07-30.basil",
-});
+
 
 export const metadata: Metadata = {
   title: "Order Confirmation | Nimbus Keyboards",
@@ -64,6 +62,14 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 
   // Fetch session details from Stripe
   try {
+    // Initialize Stripe at request time to avoid reading secrets during build
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      console.error("Missing STRIPE_SECRET_KEY - cannot retrieve Stripe session");
+      throw new Error("Missing Stripe API key");
+    }
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-07-30.basil" });
+
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     const orderDetails = {
